@@ -1,7 +1,3 @@
-void rgb(double Rcolor, double Gcolor, double Bcolor) {
-  fill_solid(leds, NUM_LEDS, CRGB(Rcolor, Gcolor, Bcolor));
-  FastLED.show();
-}
 void button(){
   if(buttonState != lastButtonState && buttonState == 1){
       state = !state;
@@ -30,11 +26,23 @@ int Conc(char a, char b, char c, char d = '\0'){
 }
 void animationColor(int colorValue, int brightness){
   double value2 = colorValue / (1023 / (3  * PI / 2));
-  if(value2 >= PI / 2) Rcolor = sin(value2 + PI) * 255 * ((float)brightness / 100);
-  else Rcolor = sin(value2 + (PI / 2)) * 255 * ((float)brightness / 100);
-  if(Rcolor <  0) Rcolor = 0;
-  Gcolor = sin(value2) * 255 * ((float)brightness / 100); if (Gcolor < 0) Gcolor = 0;
-  Bcolor = sin(value2 + 3 * PI / 2) * 255 * ((float)brightness / 100); if (Bcolor <  0) Bcolor = 0;
+  if(value2 >= PI / 2){
+    Rcolor = sin(value2 + PI) * 255 * ((float)brightness / 100);
+  }
+  else{
+    Rcolor = sin(value2 + (PI / 2)) * 255 * ((float)brightness / 100);
+  }
+  Gcolor = sin(value2) * 255 * ((float)brightness / 100);
+  Bcolor = sin(value2 + 3 * PI / 2) * 255 * ((float)brightness / 100);
+  if(Rcolor <  0){
+    Rcolor = 0;
+  }
+  if (Gcolor < 0){
+    Gcolor = 0;
+  }
+  if (Bcolor <  0){
+    Bcolor = 0;
+  }
 }
 void led(){
   if (colorVal > lastColorVal + 5) {
@@ -56,27 +64,6 @@ void led(){
     animationColor(lastColorVal, lastBrightness);
   }
 }
-
-void Blinking(){
-  static int32_t Time = millis();
-  if((millis()-Time)>500){
-    stateb = !stateb;
-  Time = millis();
-  }
-  if(stateb) rgb(Rcolor, Gcolor, Bcolor);
-  else rgb(0, 0, 0);
-  
-}
-void Fading(){
-  static int32_t Time = millis();
-  if((millis()-Time)>100){
-    Time = millis();
-    rgb(Rcolor, Gcolor, Bcolor);
-    brightness *= fadeAmount;
-    if(brightness >= 100 || brightness <= 3) fadeAmount = 1/fadeAmount;
-  }
-    
-}
 String Numbers(int value, int width){
   String numStr = String(value);
   int i = 0, count = 0;
@@ -90,4 +77,15 @@ String Numbers(int value, int width){
         result += '0';
     }
   return result + numStr;
+}
+bool checkStates(){
+  return (lastState != state || lastButtonState != buttonState || lastMode != mode || 
+          lastLastColorVal != lastColorVal || lastLastBrightness != lastBrightness);
+}
+void clearBrightnessMatrix(){
+  if(mode != lastMode){
+    for (int i = 0; i < NUM_LEDS; i++){
+      arr[i] = 0;
+    }
+  }
 }

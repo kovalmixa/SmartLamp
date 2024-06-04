@@ -8,12 +8,15 @@
 
 #define DATA_PIN 13
 #define NUM_LEDS 256
+#define N 16
+#define STEPS 20
 CRGB leds[NUM_LEDS];
 
 #define MSG_BUFFER_SIZE  (50)
 
-//192.168.231.234
-//
+//192.168.231.18
+
+//vars for web, mqtt server and WiFi autentification
 const char* ssid = "guest";
 const char* password = "#Knowledge-Pool@";
 const char* mqtt_server = "broker.hivemq.com";
@@ -23,16 +26,31 @@ const char* mqtt_topic = "rgb_led_smart_lamp";
 const char* clientId = "ESP8266Client-d9b1";
 const int mqtt_port = 1883;
 
+//main vars
 int colorVal = 0, lastColorVal = 0, lastLastColorVal = 0;
 int lastBrightness = 50, lastLastBrightness = 50;
-int bcounter = 0;
 int mode = 0, lastMode = 0;
-double Rcolor = 255, Gcolor = 0, Bcolor = 0 ,fadeAmount = 1.2 ,brightness = 50;
-bool blinking = 0, fade = 0, buttonState = 0, lastButtonState = 0,  stateb = 0;
+double Rcolor = 255, Gcolor = 0, Bcolor = 0, brightness = 50;
+bool buttonState = 0, lastButtonState = 0,  stateb = 0;
 bool state = 0, lastState = 0;
+
+//vars for mode functions
+byte arr[NUM_LEDS];
+byte arrT[NUM_LEDS];
+
+const byte MAX_RADIUS = 16;
+int circleSteps = 0;
+int circleArr[3][4];
+int point = 0;
+
+int count = STEPS;
+double dCount = 0;
+
+//vars for mqtt messages
 char msg[MSG_BUFFER_SIZE];
 String message;
 
+//WiFi clients
 WiFiClient espClient = WiFiClient();
 PubSubClient client(espClient);
 ESP8266WebServer server(80);
@@ -53,6 +71,19 @@ void setup() {
   server.begin();
   FastLED.setBrightness(20);
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+  randomSeed(analogRead(0));
+  for (int i = 0; i < NUM_LEDS; i++){
+      arr[i] = 0;
+  }
+  for (int i = 0; i < NUM_LEDS; i++){
+      arrT[i] = 0;
+  }
+  for (int i = 0; i < 4; i++){
+      circleArr[2][i] = -80 * i;
+  }
+  circleArr[0][0] = random(16);
+  circleArr[1][0] = random(16);
+  circleArr[2][0] = 0;
 }
 void loop() {
   buttonState = digitalRead(buttonPin);
@@ -62,22 +93,24 @@ void loop() {
   else{
     button();
     led();
-    if(mode != 1) bcounter = 0;
+    
     if (state) {
-      if(mode == 0){
-        if(lastState != state || lastButtonState != buttonState || lastMode != mode || 
-          lastLastColorVal != lastColorVal || lastLastBrightness != lastBrightness){
-          rgb(Rcolor, Gcolor, Bcolor); 
-        }
+      if(mode == 0 && checkStates()){
+        clearBrightnessMatrix();
+        fillBySingleColor(Rcolor, Gcolor, Bcolor);
       }
-      else{
-          switch(mode){
-            case 1 : {Blinking(); break;}
-            case 2 : {Fading(); break;}
-          }
+      else if(mode == 1 && checkStates()){
+        clearBrightnessMatrix();
+        gradientFunction();
+      }
+      else if (mode > 1){
+        clearBrightnessMatrix();
+        modeAnimationFunc();
       }
     }
-    else rgb(0, 0, 0);
+    else{
+      fillBySingleColor(0, 0, 0);
+    }
   }
   lastState = state;
   lastMode = mode;
