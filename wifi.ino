@@ -32,8 +32,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
   mode = (char)payload[0] - '0';
-  if ((char)payload[2] == '1') {state = 1; buttonState = 1;}
-  else if ((char)payload[2] == '0') {state = 0; buttonState = 1;}
-  brightness = Conc((char)payload[3], (char)payload[4], (char)payload[5]);
-  colorVal = Conc((char)payload[6], (char)payload[7], (char)payload[8], (char)payload[9]);
+  if ((char)payload[1] == '1') {state = 1; buttonState = 1;}
+  else if ((char)payload[1] == '0') {state = 0; buttonState = 1;}
+  pulse = (char)payload[2] - '0';
+  rainbow = (char)payload[3] - '0';
+  brightness = Conc((char)payload[4], (char)payload[5], (char)payload[6], (char)payload[7]);
+  colorVal = Conc((char)payload[8], (char)payload[9], (char)payload[10], (char)payload[11]);
 }

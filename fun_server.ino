@@ -2,14 +2,12 @@ void button(){
   if(buttonState != lastButtonState && buttonState == 1){
       state = !state;
       mode = 0;
-      sprintf(msg, "%hd%hd%hd",mode, buttonState , state);
-      String brightnessStr = Numbers(brightness, 3);
-      for(int i = 0; i < 3; i++){
-         msg[i+3] = Numbers(brightness, 3)[i];
-      }
-      String colorValStr = Numbers(colorVal, 4);
+      sprintf(msg, "%hd%hd%hd%hd",mode , state, pulse, rainbow);
       for(int i = 0; i < 4; i++){
-         msg[i+6] = colorValStr[i];
+         msg[i+4] = Numbers(brightness, 4)[i];
+      }
+      for(int i = 0; i < 4; i++){
+         msg[i+8] = Numbers(colorVal, 4)[i];
       }
       client.publish(mqtt_topic, msg);
   }
@@ -27,13 +25,13 @@ int Conc(char a, char b, char c, char d = '\0'){
 void animationColor(int colorValue, int brightness){
   double value2 = colorValue / (1023 / (3  * PI / 2));
   if(value2 >= PI / 2){
-    Rcolor = sin(value2 + PI) * 255 * ((float)brightness / 100);
+    Rcolor = sin(value2 + PI) * 255 * ((float)brightness / 1023);
   }
   else{
-    Rcolor = sin(value2 + (PI / 2)) * 255 * ((float)brightness / 100);
+    Rcolor = sin(value2 + (PI / 2)) * 255 * ((float)brightness / 1023);
   }
-  Gcolor = sin(value2) * 255 * ((float)brightness / 100);
-  Bcolor = sin(value2 + 3 * PI / 2) * 255 * ((float)brightness / 100);
+  Gcolor = sin(value2) * 255 * ((float)brightness / 1023);
+  Bcolor = sin(value2 + 3 * PI / 2) * 255 * ((float)brightness / 1023);
   if(Rcolor <  0){
     Rcolor = 0;
   }
@@ -45,25 +43,37 @@ void animationColor(int colorValue, int brightness){
   }
 }
 void led(){
-  if (colorVal > lastColorVal + 5) {
-    lastColorVal += 5;
-    animationColor(lastColorVal, lastBrightness);
+  if(!rainbow){
+    if (colorVal > lastColorVal + 5) {
+      lastColorVal += 5;
+      animationColor(lastColorVal, lastBrightness);
+    }
+    else if (lastColorVal > colorVal + 5) {
+     lastColorVal -= 5;
+     animationColor(lastColorVal, lastBrightness);
+    }
   }
-  else if (lastColorVal > colorVal + 5) {
-   lastColorVal -= 5;
-   animationColor(lastColorVal, lastBrightness);
+  else{
+    Rainbow();
   }
-  if(brightness > lastBrightness){
-    lastBrightness++;
-    delay(5);
-    animationColor(lastColorVal, lastBrightness);
+  if(!pulse){
+   if(brightness > lastBrightness + 5){
+      lastBrightness += 5;
+      animationColor(lastColorVal, lastBrightness);
+    }
+    else if(lastBrightness > brightness + 5){
+      lastBrightness -= 5;
+      animationColor(lastColorVal, lastBrightness);
+    }
   }
-  else if(lastBrightness > brightness){
-    lastBrightness--;
-    delay(5);
-    animationColor(lastColorVal, lastBrightness);
+  else{
+    if(brightness > 945){
+      brightness = 945;
+    }
+    Pulse();
   }
 }
+  
 String Numbers(int value, int width){
   String numStr = String(value);
   int i = 0, count = 0;

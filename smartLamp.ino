@@ -28,11 +28,13 @@ const int mqtt_port = 1883;
 
 //main vars
 int colorVal = 0, lastColorVal = 0, lastLastColorVal = 0;
-int lastBrightness = 50, lastLastBrightness = 50;
+int lastBrightness = 512, lastLastBrightness = 512;
 int mode = 0, lastMode = 0;
-double Rcolor = 255, Gcolor = 0, Bcolor = 0, brightness = 50;
-bool buttonState = 0, lastButtonState = 0,  stateb = 0;
+double Rcolor = 255, Gcolor = 0, Bcolor = 0, brightness = 512;
+bool buttonState = 0, lastButtonState = 0;
 bool state = 0, lastState = 0;
+bool pulse = 0, rainbow = 0;
+double bCounter = 1.1;
 
 //vars for mode functions
 byte arr[NUM_LEDS];
@@ -93,7 +95,6 @@ void loop() {
   else{
     button();
     led();
-    
     if (state) {
       if(mode == 0 && checkStates()){
         clearBrightnessMatrix();

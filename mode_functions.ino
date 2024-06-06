@@ -166,9 +166,31 @@ void gradientFunction() {
   }
   for (int i = 0; i < NUM_LEDS; i++) {
     double t = (double)i / (NUM_LEDS - 1);
-    leds[i] = CRGB(((double)1 - t) * Rcolor + t * Rcolor2 * ((float)lastBrightness / 100), 
-                   ((double)1 - t) * Gcolor + t * Gcolor2 * ((float)lastBrightness / 100), 
-                   ((double)1 - t) * Bcolor + t * Bcolor2 * ((float)lastBrightness / 100));
+    leds[i] = CRGB(((double)1 - t) * Rcolor + t * Rcolor2 * ((float)lastBrightness / 1023), 
+                   ((double)1 - t) * Gcolor + t * Gcolor2 * ((float)lastBrightness / 1023), 
+                   ((double)1 - t) * Bcolor + t * Bcolor2 * ((float)lastBrightness / 1023));
   }
   FastLED.show();
+}
+void Pulse(){
+  if(!(millis() % (mode > 1 ? 10 : 100))){
+    if(brightness >= 900 || brightness <= 100){
+        bCounter = (double)1 / bCounter;
+    }
+     brightness = (int)((double)brightness * bCounter);
+     lastBrightness = brightness;
+     animationColor(lastColorVal, lastBrightness);
+  }
+}
+void Rainbow(){
+  if(!(millis() % (mode > 1 ? 1 : 10))){
+    if(colorVal <= 1023){
+      colorVal++;
+    }
+    else{
+      colorVal = 0;
+    }
+    lastColorVal = colorVal;
+    animationColor(lastColorVal, lastBrightness);
+  }
 }
