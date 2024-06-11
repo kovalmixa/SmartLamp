@@ -1,5 +1,5 @@
 void fillBySingleColor(int Rcolor, int Gcolor, int Bcolor) {
-  fill_solid(leds, NUM_LEDS, CRGB(Rcolor, Gcolor, Bcolor));
+  fill_solid(leds, NUM_LEDS, CRGB((int)Rcolor, (int)Gcolor, (int)Bcolor));
   FastLED.show();
 }
 void perlinNoiseFunction(){
@@ -44,10 +44,11 @@ void bilinearInterpolation(){
     float tx = (float)i / (N - 1);
     for (int j = 0; j < N; j++) {
       float ty = (float)j / (N - 1);
-      arrT[i * N + j] = (arrT[i * N + j] + (int)(((1 - tx) * ((1 - ty) * arrT[0] + ty * arr[N-1])) + (tx * ((1 - ty) * arrT[(N - 1) * N] + ty * arrT[N * N - 1])))) / 2;
+      arrT[i * N + j] = (arrT[i * N + j] + (int)(((1 - tx) * ((1 - ty) * arrT[0] + ty * arr[N-1]))
+      + (tx * ((1 - ty) * arrT[(N - 1) * N] + ty * arrT[N * N - 1])))) / 2;
     }
   }
-} 
+}
 void circleFunction(){
   for (int i = 0; i < NUM_LEDS; i++){
       arr[i] = 0;
@@ -135,7 +136,9 @@ void modeAnimationFunc() {
   }
   inversion();
   for (int i = 0; i < NUM_LEDS; i++) {
-    leds[i] = CRGB(Rcolor * (double)arr[i] / 255, Gcolor * (double)arr[i] / 255, Bcolor * (double)arr[i] / 255);
+    leds[i] = CRGB((int)(Rcolor * (double)arr[i] / 255), 
+                   (int)(Gcolor * (double)arr[i] / 255), 
+                   (int)(Bcolor * (double)arr[i] / 255));
   }
   FastLED.show();
 }

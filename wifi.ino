@@ -1,14 +1,3 @@
-void WiFiConnection(){
-  WiFi.begin(ssid, password);
-  WiFi.mode(WIFI_STA);
-  while(WiFi.status()!=WL_CONNECTED){
-     delay(1000);
-     Serial.println("Connecting...");
-  }
-  Serial.println("Connected");
-  Serial.println("IP adress:");
-  Serial.println(WiFi.localIP());
-}
 void reconnect() {
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
@@ -32,8 +21,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
   mode = (char)payload[0] - '0';
-  if ((char)payload[1] == '1') {state = 1; buttonState = 1;}
-  else if ((char)payload[1] == '0') {state = 0; buttonState = 1;}
+  if ((char)payload[1] == '1'){
+    state = 1; buttonState = 1;
+  }
+  else if ((char)payload[1] == '0'){
+    state = 0; buttonState = 1;
+  }
   pulse = (char)payload[2] - '0';
   rainbow = (char)payload[3] - '0';
   brightness = Conc((char)payload[4], (char)payload[5], (char)payload[6], (char)payload[7]);

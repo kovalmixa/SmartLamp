@@ -1,18 +1,26 @@
-void button(){
-  if(buttonState != lastButtonState && buttonState == 1){
-      state = !state;
-      mode = 0;
-      sprintf(msg, "%hd%hd%hd%hd",mode , state, pulse, rainbow);
-      for(int i = 0; i < 4; i++){
-         msg[i+4] = Numbers(brightness, 4)[i];
-      }
-      for(int i = 0; i < 4; i++){
-         msg[i+8] = Numbers(colorVal, 4)[i];
-      }
-      client.publish(mqtt_topic, msg);
+void ButtonClick() {
+  if (button.isClick() || (buttonState != lastButtonState && buttonState == 1)) {
+    buttonState = 1;
+    if (!state) {
+      brightness = brightnessBefore;
+    }
+    state = !state;
+    mode = 0;
+    sendMQTTMessage();
   }
 }
-int Conc(char a, char b, char c, char d = '\0'){
+void ButtonHold(){
+  if(button.isHold()){
+    if(brightness > 1010 || brightness < 20){
+      sign2 *= -1;
+    }
+    brightness += sign2;
+  }
+  else if(button.isRelease()){
+    sendMQTTMessage();
+  }
+}
+int Conc(char a, char b, char c, char d = '\0') {
   char arr[5];
   arr[0] = a;
   arr[1] = b;
@@ -20,82 +28,104 @@ int Conc(char a, char b, char c, char d = '\0'){
   arr[3] = d;
   arr[4] = '\0';
   String conc = String(arr);
-  return atoi(conc.c_str()); 
+  return atoi(conc.c_str());
 }
-void animationColor(int colorValue, int brightness){
+void animationColor(int colorValue, int brightness) {
   double value2 = colorValue / (1023 / (3  * PI / 2));
-  if(value2 >= PI / 2){
+  if (value2 >= PI / 2) {
     Rcolor = sin(value2 + PI) * 255 * ((float)brightness / 1023);
   }
-  else{
+  else {
     Rcolor = sin(value2 + (PI / 2)) * 255 * ((float)brightness / 1023);
   }
   Gcolor = sin(value2) * 255 * ((float)brightness / 1023);
   Bcolor = sin(value2 + 3 * PI / 2) * 255 * ((float)brightness / 1023);
-  if(Rcolor <  0){
+  if (Rcolor <  0) {
     Rcolor = 0;
   }
-  if (Gcolor < 0){
+  if (Gcolor < 0) {
     Gcolor = 0;
   }
-  if (Bcolor <  0){
+  if (Bcolor <  0) {
     Bcolor = 0;
   }
 }
-void led(){
-  if(!rainbow){
+void led() {
+  if (!rainbow) {
     if (colorVal > lastColorVal + 5) {
       lastColorVal += 5;
       animationColor(lastColorVal, lastBrightness);
     }
     else if (lastColorVal > colorVal + 5) {
-     lastColorVal -= 5;
-     animationColor(lastColorVal, lastBrightness);
+      lastColorVal -= 5;
+      animationColor(lastColorVal, lastBrightness);
     }
   }
-  else{
+  else {
     Rainbow();
   }
-  if(!pulse){
-   if(brightness > lastBrightness + 5){
+  if (!pulse) {
+    if (brightness > lastBrightness + 5) {
       lastBrightness += 5;
       animationColor(lastColorVal, lastBrightness);
     }
-    else if(lastBrightness > brightness + 5){
+    else if (lastBrightness > brightness + 5) {
       lastBrightness -= 5;
       animationColor(lastColorVal, lastBrightness);
     }
   }
-  else{
-    if(brightness > 945){
+  else {
+    if (brightness > 945) {
       brightness = 945;
+    }
+    else if (brightness == 100) {
+      brightness = 120;
     }
     Pulse();
   }
 }
-  
-String Numbers(int value, int width){
+String Numbers(int value, int width) {
   String numStr = String(value);
   int i = 0, count = 0;
-  while(numStr[i]){
+  while (numStr[i]) {
     count++;
     i++;
   }
   int zeros = width - count;
-  String result = ""; 
-    for (int i = 0; i < zeros; i++) {
-        result += '0';
-    }
+  String result = "";
+  for (int i = 0; i < zeros; i++) {
+    result += '0';
+  }
   return result + numStr;
 }
-bool checkStates(){
-  return (lastState != state || lastButtonState != buttonState || lastMode != mode || 
+bool checkStates() {
+  return (lastState != state || lastButtonState != buttonState || lastMode != mode ||
           lastLastColorVal != lastColorVal || lastLastBrightness != lastBrightness);
 }
-void clearBrightnessMatrix(){
-  if(mode != lastMode){
-    for (int i = 0; i < NUM_LEDS; i++){
+void clearBrightnessMatrix() {
+  if (mode != lastMode) {
+    for (int i = 0; i < NUM_LEDS; i++) {
       arr[i] = 0;
     }
   }
+}
+void sendMQTTMessage(){
+  sprintf(msg, "%hd%hd%hd%hd", mode, state, pulse, rainbow);
+  for (int i = 0; i < 4; i++) {
+    msg[i + 4] = Numbers(brightness, 4)[i];
+  }
+  for (int i = 0; i < 4; i++) {
+    msg[i + 8] = Numbers(colorVal, 4)[i];
+  }
+  client.publish(mqtt_topic, msg);
+}
+void turnOff() {
+  if (brightness) {
+    brightnessBefore = brightness;
+    pulse = 0;
+    rainbow = 0;
+  }
+  brightness = 0;
+  clearBrightnessMatrix();
+  fillBySingleColor(Rcolor, Gcolor, Bcolor);
 }
