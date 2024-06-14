@@ -3,6 +3,7 @@
 #include <ESP8266HTTPClient.h>
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
+#include <DNSServer.h>
 #include <FastLED.h>
 #include <EncButton.h>
 
@@ -17,6 +18,8 @@ CRGB leds[NUM_LEDS];
 #define MSG_BUFFER_SIZE  (50)
 
 //vars for web, mqtt server and WiFi autentification
+const char* ssid = "guest";
+const char* password = "#Knowledge-Pool@";
 const char* mqtt_server = "broker.hivemq.com";
 const char* mqtt_username = "Smartlamp1";
 const char* mqtt_password = "2qw12QWL1";
@@ -62,18 +65,15 @@ EncButton<EB_TICK, buttonPin> button;
 
 void setup() {
   Serial.begin(115200);
-  
+
+  FastLED.setBrightness(20);
+  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
+  fillBySingleColor(0, 125, 125); //Light blue indication before wifi configuration
+
   pinMode(buttonPin, INPUT);
 
-  WiFiManager wifiManager;
-
-  if(!wifiManager.autoConnect("AutoConnectAP")){
-    Serial.println("Unable to connect and eter to the config mode.");
-    ESP.reset();
-    delay(1000);
-  }
-  
-  Serial.println("Connected to WiFi!");
+  WiFiManager wm;
+  wm.autoConnect("AutoConnectAP");
   WiFi.softAP(mqtt_username, "*1f2f3f@QW7ф7ф7qwe&");
   
   client.setServer(mqtt_server, mqtt_port);
@@ -82,8 +82,6 @@ void setup() {
   server.on("/", HTTP_GET, handleRoot);
   server.on("/connect", HTTP_POST, handleConnect);
   server.begin();
-  FastLED.setBrightness(20);
-  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
   randomSeed(analogRead(0));
   for (int i = 0; i < NUM_LEDS; i++){
       arr[i] = 0;
@@ -98,7 +96,7 @@ void setup() {
   circleArr[1][0] = random(16);
   circleArr[2][0] = 0;
   button.setButtonLevel(HIGH);
-  fillBySingleColor(0, 0, 255);
+  fillBySingleColor(0, 0, 255); //Blue indication before mqtt configuration
 }
 void loop() {
   if (!client.connected()) {
@@ -106,7 +104,7 @@ void loop() {
   }
   else{
     if(firstConnection){
-      fillBySingleColor(0, 0, 0);
+      turnOff();
       firstConnection = 0;
     }
     else{
