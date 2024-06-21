@@ -1,8 +1,12 @@
 void ButtonClick() {
-  if (button.isClick() || (buttonState != lastButtonState && buttonState == 1)) {
-    buttonState = 1;
+  if (button.isClick()){
     if (!state) {
-      brightness = brightnessBefore;
+      if(brightnessBefore){
+        brightness = brightnessBefore;
+      }
+      else{
+        brightness = 512;
+      }
     }
     state = !state;
     mode = 0;
@@ -12,6 +16,7 @@ void ButtonClick() {
 void ButtonHold(){
   if(button.isHold()){
     if(brightness > 1010 || brightness < 20){
+      brightness = brightness > 1010 ? 1010 : 20;
       sign2 *= -1;
     }
     brightness += sign2;
@@ -99,7 +104,7 @@ String Numbers(int value, int width) {
   return result + numStr;
 }
 bool checkStates() {
-  return (lastState != state || lastButtonState != buttonState || lastMode != mode ||
+  return (lastState != state || lastMode != mode ||
           lastLastColorVal != lastColorVal || lastLastBrightness != lastBrightness);
 }
 void clearBrightnessMatrix() {

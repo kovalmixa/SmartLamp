@@ -13,6 +13,16 @@ void reconnect() {
   }
 } 
 void callback(char* topic, byte* payload, unsigned int length) {
+  bool isSimilar = true;
+  for(int i = 0; i < length; i++){
+    if((char)msg[i] != (char)payload[i]){
+      isSimilar = false;
+      break;
+    }
+  }
+  if(isSimilar){
+    return;
+  }
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
@@ -22,13 +32,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
   Serial.println();
   mode = (char)payload[0] - '0';
   if ((char)payload[1] == '1'){
-    state = 1; buttonState = 1;
+    state = 1;
   }
   else if ((char)payload[1] == '0'){
-    state = 0; buttonState = 1;
+    state = 0;
   }
   pulse = (char)payload[2] - '0';
   rainbow = (char)payload[3] - '0';
   brightness = Conc((char)payload[4], (char)payload[5], (char)payload[6], (char)payload[7]);
   colorVal = Conc((char)payload[8], (char)payload[9], (char)payload[10], (char)payload[11]);
+  for(int i = 0; i < length; i++){
+    msg[i] = (char)payload[i];
+  }
 }

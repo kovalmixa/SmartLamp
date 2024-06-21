@@ -112,7 +112,12 @@ void handleRoot(){
   message += state;
   message += ";";
   message += "let brightness =";
-  message += brightness;
+  if(brightness){
+    message += brightness;
+  }
+  else{
+    message += brightnessBefore;
+  }
   message += ";";
   message += "let colorVal =";
   message += colorVal;
@@ -121,7 +126,9 @@ void handleRoot(){
   message += mqtt_topic;
   message += "';";
   message += "let lastMessage = 'null';";
-  message += "let client = new Paho.MQTT.Client('broker.hivemq.com', 8000, 'adfsgd');";
+  message += "let client = new Paho.MQTT.Client('broker.hivemq.com', 8000, '";
+  message += mqtt_username;
+  message += "_web');";
   message += "client.onConnectionLost = onConnectionLost;";
   message += "client.onConnectionLost = onConnectionLost;";
   message += "client.onMessageArrived = onMessageArrived;";
@@ -166,6 +173,13 @@ void handleRoot(){
   message += "const colorRange = document.getElementById('colorRange');";
   message += "brightnessRange.value = brightness;";
   message += "colorRange.value = colorVal;";
+  message += "function setButtonColor(obj, state){";
+  message += "if(state){";
+  message += "obj.style.backgroundColor = 'green';";
+  message += "obj.style.borderColor = 'green';";
+  message += "} else {";
+  message += "obj.style.backgroundColor = 'rgb(0, 71, 179)';";
+  message += "obj.style.borderColor = 'rgb(0, 71, 179)';}}";
   message += "function mOver(obj, state = 0) {";
   message += "if(state){";
   message += "obj.style.backgroundColor = 'green';";
@@ -188,9 +202,9 @@ void handleRoot(){
   message += "Gcolor = Math.sin(colorVal2) * 255;";
   message += "if(Gcolor < 0) Gcolor = 0;";
   message += "Bcolor = Math.sin(colorVal2 + 3 * Math.PI / 2) * 255;";
-  message += "if(Bcolor < 0) Bcolor = 0;}";
+  message += "if(Bcolor < 0) Bcolor = 0;";
+  message += "colorDisplay.style.backgroundColor = `rgb(${Rcolor},${Gcolor},${Bcolor})`;}";
   message += "rgbColors(colorVal);";
-  message += "colorDisplay.style.backgroundColor = `rgb(${Rcolor},${Gcolor},${Bcolor})`;";
   message += "onOff.addEventListener('click', function() {";
   message += "if(state == 1) state = 0;";
   message += "else state = 1;";
@@ -257,7 +271,6 @@ void handleRoot(){
   message += "rainbow.style.backgroundColor = 'rgb(0, 102, 255)';";
   message += "rainbow.style.borderColor = 'rgb(0, 102, 255)';";
   message += "rgbColors(colorRange.value);";
-  message += "colorDisplay.style.backgroundColor = `rgb(${Rcolor},${Gcolor},${Bcolor})`;";
   message += "colorRange.addEventListener('mouseup', function(){";
   message += "colorVal = colorRange.value;";
   message += "sendMessage();});";
@@ -328,7 +341,16 @@ void handleRoot(){
   message += "lightMode = parseInt(message.payloadString[0]);";
   message += "state = parseInt(message.payloadString[1]);";
   message += "pulseState = parseInt(message.payloadString[2]);";
+  message += "setButtonColor(brightnessPulse, pulseState);";
   message += "rainbowState = parseInt(message.payloadString[3]);";
+  message += "setButtonColor(rainbow, rainbowState);";
+  message += "brightnessRange.value = parseInt(message.payloadString[4] + message.payloadString[5]";
+  message += "+ message.payloadString[6] + message.payloadString[7]);";
+  message += "brightness = brightnessRange.value;";
+  message += "colorRange.value = parseInt(message.payloadString[8] + message.payloadString[9]";
+  message += "+ message.payloadString[10] + message.payloadString[11]);";
+  message += "colorVal = colorRange.value;";
+  message += "rgbColors(colorVal);";
   message += "if(state == 0) lightMode = 0;";
   message += "onOffColor();";
   message += "lastMessage = lightMode.toString() + state.toString() + pulseState.toString()";

@@ -21,10 +21,10 @@ CRGB leds[NUM_LEDS];
 const char* ssid = "guest";
 const char* password = "#Knowledge-Pool@";
 const char* mqtt_server = "broker.hivemq.com";
-const char* mqtt_username = "Smartlamp1";
-const char* mqtt_password = "2qw12QWL1";
+const char* mqtt_username = "Smartlamp2";
+const char* mqtt_password = "2qw12QWL2";
 const char* mqtt_topic = "rgb_led_smart_lamp";
-const char* clientId = "ESP8266Client-d9b1";
+const char* clientId = "ESP8266Client-d9b2";
 const int mqtt_port = 1883;
 
 //main vars
@@ -35,7 +35,6 @@ short int mode = 0, lastMode = 0;
 short int sign = 1, sign2 = 5;
 double Rcolor = 255, Gcolor = 0, Bcolor = 0, brightness = 512;
 double brightnessBefore = 512;
-bool buttonState = 0, lastButtonState = 0;
 bool state = 0, lastState = 0;
 bool pulse = 0, rainbow = 0;
 double bCounter = 1.1;
@@ -135,7 +134,6 @@ void loop() {
   lastMode = mode;
   lastLastColorVal = lastColorVal;
   lastLastBrightness = lastBrightness;
-  lastButtonState = buttonState;
   server.handleClient();
   client.loop();
 }
