@@ -65,7 +65,7 @@ EncButton<EB_TICK, buttonPin> button;
 void setup() {
   Serial.begin(115200);
 
-  FastLED.setBrightness(20);
+  FastLED.setBrightness(100);
   FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
   fillBySingleColor(0, 125, 125); //Light blue indication before wifi configuration
 
