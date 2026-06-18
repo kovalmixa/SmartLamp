@@ -4,8 +4,13 @@
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
 #include <DNSServer.h>
-#include <FastLED.h>
 #include <EncButton.h>
+#include <Arduino.h>
+
+#include "ChannelIndicator.h"
+#include "InputHandler.h"
+#include "MqttHandler.h"
+#include "LedMatrix.h"
 
 #define buttonPin 15
 
@@ -65,9 +70,6 @@ EncButton<EB_TICK, buttonPin> button;
 void setup() {
   Serial.begin(115200);
 
-  FastLED.setBrightness(100);
-  FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-  fillBySingleColor(0, 125, 125); //Light blue indication before wifi configuration
 
   pinMode(buttonPin, INPUT);
 

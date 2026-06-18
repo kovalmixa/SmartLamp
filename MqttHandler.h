@@ -1,18 +1,42 @@
-void reconnect() {
+#ifndef MQTT_HANDLER
+#define MQTT_HANDLER
+#pragma once
+
+#include <Arduino.h>
+#include <ESP8266WiFi.h>
+#include <PubSubClient.h>
+#include <ESP8266HTTPClient.h>
+#include <ESP8266WebServer.h>
+#include <WiFiManager.h>
+#include <DNSServer.h>
+
+class MqttHandler{
+  public:
+
+  void reconnect() const;
+  void callback(char* topic, byte* payload, unsigned int length) const;
+  private:
+
+
+}
+
+void reconnect(){
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     if (client.connect(clientId, mqtt_username, mqtt_password)) {
       Serial.println("connected");
       client.subscribe(mqtt_topic);
-    } else {
+    } 
+    else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
       Serial.println(" try again in 5 seconds");
       delay(5000);
     }
   }
-} 
-void callback(char* topic, byte* payload, unsigned int length) {
+}
+
+inline void callback(char* topic, byte* payload, unsigned int length){
   bool isSimilar = true;
   for(int i = 0; i < length; i++){
     if((char)msg[i] != (char)payload[i]){
@@ -45,3 +69,5 @@ void callback(char* topic, byte* payload, unsigned int length) {
     msg[i] = (char)payload[i];
   }
 }
+
+#endif

@@ -1,2 +1,0 @@
-# SmartLamp
-smart
