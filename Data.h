@@ -3,22 +3,26 @@
 #pragma once
 
 enum ModType{
-  PerlinNoise,
-  Circles,
-  Sinusoid
+  PerlinNoise, Circles, Sinusoid
 }
 
 enum ExtraModType{
-  Gradient,
-  Pulse,
-  Rainbow
+  Gradient, Pulse, Rainbow
 }
 
-struct Data{
-  float brightness;
-  float colorValue;
+struct LedMatrixData{
+  bool power;
+  short brightness;
+  short colorValue;
   ModType modType;
   ExtraModType extraModType[];
+}
+
+
+struct Data{
+  bool tryConnectToMqtt;
+  uint8_t channel;
+  LedMatrixData ledMatrixData;
 }
 
 #endif

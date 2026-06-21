@@ -4,33 +4,11 @@
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
 #include <DNSServer.h>
-#include <EncButton.h>
-#include <Arduino.h>
 
 #include "ChannelIndicator.h"
 #include "InputHandler.h"
 #include "MqttHandler.h"
 #include "LedMatrix.h"
-
-#define buttonPin 15
-
-#define DATA_PIN 13
-#define NUM_LEDS 256
-#define N 16
-#define STEPS 20
-CRGB leds[NUM_LEDS];
-
-#define MSG_BUFFER_SIZE  (50)
-
-//vars for web, mqtt server and WiFi autentification
-const char* ssid = "guest";
-const char* password = "#Knowledge-Pool@";
-const char* mqtt_server = "broker.hivemq.com";
-const char* mqtt_username = "Smartlamp2";
-const char* mqtt_password = "2qw12QWL2";
-const char* mqtt_topic = "rgb_led_smart_lamp";
-const char* clientId = "ESP8266Client-d9b2";
-const int mqtt_port = 1883;
 
 //main vars
 bool firstConnection = 1;
@@ -65,7 +43,6 @@ WiFiClient espClient = WiFiClient();
 PubSubClient client(espClient);
 ESP8266WebServer server(80);
 
-EncButton<EB_TICK, buttonPin> button;
 
 void setup() {
   Serial.begin(115200);

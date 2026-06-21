@@ -9,18 +9,44 @@
 #include <ESP8266WebServer.h>
 #include <WiFiManager.h>
 #include <DNSServer.h>
+#include <cstdlib>
+#include <ctime>
 
 class MqttHandler{
   public:
-
+  MqttHandler();
   void reconnect() const;
   void callback(char* topic, byte* payload, unsigned int length) const;
-  private:
 
+  private:
+  #define MQTT_LED_PIN 15
+  #define MSG_BUFFER_SIZE (200)
+  const char* _ssid = "smartLampDevice_";
+  const char* _password;
+  const char* _mqttPassword;
+  const char* _mqttTopic = "smartLamp_";
+  const int _mqttPort = 1883;
+  int _currentRandIndex;
+
+  WiFiClient espClient = WiFiClient();
+  PubSubClient client(espClient);
+  ESP8266WebServer server(80);
+
+  const uint ROTATION_ENCODER_SEND_DELAY = 500;
+  const uint CHANNEL_CHANGE_DELAY = 500;
+  uint8_t _lastChannel;
+  short _lastBrightness, _lastColor;
+}
+
+inline MqttHandler(){
+  pinMode(MQTT_LED_PIN, OUTPUT);
+
+  std::srand(std::time(0));
+  _currentRandIndex = std::rand() % 10000 + 1;
 
 }
 
-void reconnect(){
+inline void reconnect(){
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     if (client.connect(clientId, mqtt_username, mqtt_password)) {

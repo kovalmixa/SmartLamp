@@ -6,9 +6,14 @@
 
 class ChannelIndicator{
   public:
-  void setDigit(uint8_t digit, bool isRight) const;
-  
+  ChannelIndicator();
+
+  void writeChannelNumber(const uint8_t number) const;
   private:
+  #define CLOCK_PIN 16
+  #define LATCH_PIN 2
+  #define DATA_PIN 13
+
   const int INDICATOR_PINS[] = {2, 3, 4, 5, 6, 7, 8}; 
   const int PINS_COUNT = sizeof(INDICATOR_PINS) / sizeof(INDICATOR_PINS[0]);
   const uint8_t segmentMap[] = {
@@ -23,9 +28,34 @@ class ChannelIndicator{
     0b01111111, // 8
     0b01101111,  // 9
   };
+
+  void setDigit(uint8_t digit, bool isRight) const;
+  void clearDisplay() const;
+}
+
+ChannelIndicator(){
+  pinMode(CLOCK_PIN, OUTPUT);
+  pinMode(LATCH_PIN, OUTPUT);
+  pinMode(DATA_PIN, OUTPUT);
+}
+
+inline void writeChannelNumber(const uint8_t number) const{
+  clearDisplay();
+  setDigit(number/10, false);
+  //добавить делеи на базе millis()
+
+  clearDisplay();
+  setDigit(number%10, true);
+  //добавить делеи на базе millis()
 }
 
 inline void setDigit(uint8_t digit, bool isRight){
 
 }
+
+inline void clearDisplay(){
+  for (int i = 0; i < PINS_COUNT; i++)
+    digitalWrite(INDICATOR_PINS[i], !IS_COMMON_CATHODE);
+}
+
 #endif
