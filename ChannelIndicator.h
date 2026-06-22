@@ -4,11 +4,13 @@
 
 #include "Arduino.h"
 
-class ChannelIndicator{
+class ChannelIndicator : public Singltone<ChannelIndicator>{
   public:
-  ChannelIndicator();
-
   void writeChannelNumber(const uint8_t number) const;
+
+  protected:
+  static ChannelIndicator();
+
   private:
   #define CLOCK_PIN 16
   #define LATCH_PIN 2
@@ -28,15 +30,8 @@ class ChannelIndicator{
     0b01111111, // 8
     0b01101111,  // 9
   };
-
   void setDigit(uint8_t digit, bool isRight) const;
   void clearDisplay() const;
-}
-
-ChannelIndicator(){
-  pinMode(CLOCK_PIN, OUTPUT);
-  pinMode(LATCH_PIN, OUTPUT);
-  pinMode(DATA_PIN, OUTPUT);
 }
 
 inline void writeChannelNumber(const uint8_t number) const{
@@ -47,6 +42,12 @@ inline void writeChannelNumber(const uint8_t number) const{
   clearDisplay();
   setDigit(number%10, true);
   //добавить делеи на базе millis()
+}
+
+ChannelIndicator(){
+  pinMode(CLOCK_PIN, OUTPUT);
+  pinMode(LATCH_PIN, OUTPUT);
+  pinMode(DATA_PIN, OUTPUT);
 }
 
 inline void setDigit(uint8_t digit, bool isRight){

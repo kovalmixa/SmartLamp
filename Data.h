@@ -2,8 +2,10 @@
 #define DATA
 #pragma once
 
+#include <vector>
+
 enum ModType{
-  PerlinNoise, Circles, Sinusoid
+  None, PerlinNoise, Circles, Sinusoid
 }
 
 enum ExtraModType{
@@ -11,16 +13,16 @@ enum ExtraModType{
 }
 
 struct LedMatrixData{
-  bool power;
-  short brightness;
-  short colorValue;
-  ModType modType;
-  ExtraModType extraModType[];
+  bool power = false;
+  short brightness = 100;
+  short colorValue = 0;
+  ModType modType = ModType.None;
+  std::vector<ExtraModType> extraModTypes;
 }
 
 
 struct Data{
-  bool tryConnectToMqtt;
+  bool tryConnectToMqtt = true;
   uint8_t channel;
   LedMatrixData ledMatrixData;
 }

@@ -5,10 +5,13 @@
 #include <EncButton.h>
 #include <Arduino.h>
 
-class InputHandler{
+class InputHandler : public Singltone<InputHandler>{
   public:
-    InputHandler();
-    bool tryGetInput(Data* data);
+  bool tryGetInput(Data* data);
+
+  protected:
+  InputHandler();
+
   private:
     #define POT_PIN A0
     #define BUT_PIN 0
@@ -26,6 +29,32 @@ class InputHandler{
     void processButtonInput(Data* data, bool* isChanged);
 }
 
+inline bool tryGetInput(Data* data){
+  auto* ledMatrixData = &(data->ledMatrixData); 
+  bool isChanged = false;
+
+  uint8_t channelInput = map(analogRead(POT_PIN), 0, 1023, 0, 100);
+  if (channelInput != data->channel) isChanged = true;
+
+  int brightness, color;
+  readRotationEncoder(BRT_CLK_PIN, BRT_DT_PIN, &_lastbrightStateCLK, &brightness);
+  readRotationEncoder(CLR_CLK_PIN, CLR_DT_PIN, &_lastColorStateCLK, &color);
+
+  if (brightness > MAX_ENCODER_VALUE) brightness *= -1;
+  if (color > MAX_ENCODER_VALUE) color = 0;
+
+  if (brightness != data->brightness){
+    ledMatrixData->brightness = (short)abs(brightness);
+    isChanged = true;
+  }
+  if (color != data->color){
+    ledMatrixData->color = (short)color;
+    isChanged = true;
+  }
+  
+  processButtonInput(data, &isChanged);
+  return isChanged;
+}
 inline void InputHandler(){
   pinMode(POT_PIN, INPUT_PULLUP);
   pinMode(BUT_PIN, INPUT_PULLUP);
@@ -59,33 +88,6 @@ inline void processButtonInput(Data* data, bool* isChanged){
     *isChanged = true;
   }
   else if(button.isRelease()) data->tryConnectToMqtt = !data->tryConnectToMqtt;
-}
-
-inline bool tryGetInput(Data* data){
-  auto* ledMatrixData = &(data->ledMatrixData); 
-  bool isChanged = false;
-
-  uint8_t channelInput = map(analogRead(POT_PIN), 0, 1023, 0, 100);
-  if (channelInput != data->channel) isChanged = true;
-
-  int brightness, color;
-  readRotationEncoder(BRT_CLK_PIN, BRT_DT_PIN, &_lastbrightStateCLK, &brightness);
-  readRotationEncoder(CLR_CLK_PIN, CLR_DT_PIN, &_lastColorStateCLK, &color);
-
-  if (brightness > MAX_ENCODER_VALUE) brightness *= -1;
-  if (color > MAX_ENCODER_VALUE) color = 0;
-
-  if (brightness != data->brightness){
-    ledMatrixData->brightness = (short)abs(brightness);
-    isChanged = true;
-  }
-  if (color != data->color){
-    ledMatrixData->color = (short)color;
-    isChanged = true;
-  }
-  
-  processButtonInput(data, &isChanged);
-  return isChanged;
 }
 
 #endif

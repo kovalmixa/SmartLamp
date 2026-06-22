@@ -3,55 +3,54 @@
 #pragma once
 
 #include <Arduino.h>
+#include <ArduinoJson.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
 #include <ESP8266HTTPClient.h>
-#include <ESP8266WebServer.h>
 #include <WiFiManager.h>
-#include <DNSServer.h>
 #include <cstdlib>
 #include <ctime>
 
-class MqttHandler{
+#include "Data.h"
+
+class MqttHandler : public Singltone<MqttHandler>{
   public:
-  MqttHandler();
-  void reconnect() const;
-  void callback(char* topic, byte* payload, unsigned int length) const;
+  bool tryConnectToMqttServer(const uint8_t channelId) const;
+  inline bool isConnectedToServer() const { return client.connected(); }
+  inline void setFunctionOnCallBack() const {  }
+  void sendDataToServer(LedMatrixData* data) const;
+  protected:
+  static MqttHandler();
 
   private:
   #define MQTT_LED_PIN 15
   #define MSG_BUFFER_SIZE (200)
   const char* _ssid = "smartLampDevice_";
   const char* _password;
-  const char* _mqttPassword;
   const char* _mqttTopic = "smartLamp_";
   const int _mqttPort = 1883;
   int _currentRandIndex;
 
+  char _msg[MSG_BUFFER_SIZE];
+  char* _message;
+
   WiFiClient espClient = WiFiClient();
   PubSubClient client(espClient);
-  ESP8266WebServer server(80);
 
   const uint ROTATION_ENCODER_SEND_DELAY = 500;
   const uint CHANNEL_CHANGE_DELAY = 500;
   uint8_t _lastChannel;
   short _lastBrightness, _lastColor;
+
+  void callback(char* topic, byte* payload, unsigned int length) const;
 }
 
-inline MqttHandler(){
-  pinMode(MQTT_LED_PIN, OUTPUT);
-
-  std::srand(std::time(0));
-  _currentRandIndex = std::rand() % 10000 + 1;
-
-}
-
-inline void reconnect(){
+inline bool tryConnectToMqttServer(const uint8_t channelId) const{
   while (!client.connected()) {
     Serial.print("Attempting MQTT connection...");
     if (client.connect(clientId, mqtt_username, mqtt_password)) {
       Serial.println("connected");
-      client.subscribe(mqtt_topic);
+      client.subscribe(mqtt_topic + std::to_string(channelId));
     } 
     else {
       Serial.print("failed, rc=");
@@ -62,38 +61,45 @@ inline void reconnect(){
   }
 }
 
+inline void sendDataToServer(LedMatrixData* data) const{
+  StaticJsonDocument<200> doc;
+  DeserializationError error = deserializeJson(doc, json);
+  
+  if (error) return false;
+  this->id = doc["id"];
+  this->name = doc["name"].as<String>();
+  return true;
+  // client.publish(mqtt_topic, msg);
+}
+
+
+inline void reconnect(){
+
+}
+
 inline void callback(char* topic, byte* payload, unsigned int length){
-  bool isSimilar = true;
-  for(int i = 0; i < length; i++){
-    if((char)msg[i] != (char)payload[i]){
-      isSimilar = false;
-      break;
-    }
-  }
-  if(isSimilar){
-    return;
-  }
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
-  for (int i = 0; i < length; i++) {
+  for (int i = 0; i < length; i++)
     Serial.print((char)payload[i]);
-  }
   Serial.println();
-  mode = (char)payload[0] - '0';
-  if ((char)payload[1] == '1'){
-    state = 1;
-  }
-  else if ((char)payload[1] == '0'){
-    state = 0;
-  }
-  pulse = (char)payload[2] - '0';
-  rainbow = (char)payload[3] - '0';
-  brightness = Conc((char)payload[4], (char)payload[5], (char)payload[6], (char)payload[7]);
-  colorVal = Conc((char)payload[8], (char)payload[9], (char)payload[10], (char)payload[11]);
-  for(int i = 0; i < length; i++){
-    msg[i] = (char)payload[i];
-  }
+}
+
+inline MqttHandler(){
+  pinMode(MQTT_LED_PIN, OUTPUT);
+
+  std::srand(std::time(0));
+  _currentRandIndex = std::rand() % 10000 + 1;
+  _ssid += std::to_string(_currentRandIndex);
+  _password = std::to_string(std::rand());
+
+  WiFiManager wm;
+  wm.autoConnect("AutoConnectAP");
+  WiFi.softAP(_ssid, _password);
+
+  client.setServer(mqtt_server, mqtt_port);
+  client.setCallback(callback);
 }
 
 #endif

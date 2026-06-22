@@ -10,12 +10,13 @@
 #include "Data.h"
 #include "TimeHandler.h"
 
-class LedMatrixData{
+class LedMatrixData : public Singltone<LedMatrixData> {
   public:
-  LedMatrixData(const uint8_t  rowSize, const uint8_t  maxBrightness);
-  ~LedMatrixData() const;
-
+  Setup(const uint8_t  rowSize, const uint8_t  maxBrightness);
   void writeMatrix(const float dt, const LedMatrixData* data) const;
+
+  protected:
+  ~LedMatrixData() const;
 
   private:
   const MAX_HUE_VALUE = 1023;
@@ -30,7 +31,7 @@ class LedMatrixData{
   CRGB getRgb(const short colorVal) const;
 }
 
-inline LedMatrixData(const uint8_t  dataPin, const uint8_t  rowSize,
+inline Setup(const uint8_t  dataPin, const uint8_t  rowSize,
     const uint8_t  maxBrightness) : MATRIX_DATA_PIN(dataPin), ROW_SIZE(rowSize) {
   _totalQuantity = rowSize * rowSize;
   _leds = new CRGB[NUM_LEDS];
@@ -74,15 +75,17 @@ inline void setValueMat(const float dt, const LedMatrixData* data){
 
 inline void setColorMat(const float dt, const LedMatrixData* data){
   CRGB rgb = getRgb(data->colorValue);
-  switch(data->extraModType){
-    case Gradient : {
-      break;
-    }
+  for (auto& extra : data->extraModTypes){
+    switch(extra){
+      case Gradient : {
+        break;
+      }
       case Rainbow : {
-      break;
-    }
-      default : {
-
+        break;
+      }
+      case Pulse : {
+        break;
+      }
     }
   }
 }

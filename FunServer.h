@@ -137,16 +137,6 @@ public:
     }
   }
 
-  void sendMQTTMessage(){
-    sprintf(msg, "%hd%hd%hd%hd", mode, state, pulse, rainbow);
-    for (int i = 0; i < 4; i++) {
-      msg[i + 4] = Numbers(brightness, 4)[i];
-    }
-    for (int i = 0; i < 4; i++) {
-      msg[i + 8] = Numbers(colorVal, 4)[i];
-    }
-    client.publish(mqtt_topic, msg);
-  }
 
   void turnOff() {
     if (brightness) {
