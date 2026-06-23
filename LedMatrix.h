@@ -8,7 +8,8 @@
 #include <cmath>
 
 #include "Data.h"
-#include "TimeHandler.h"
+#include "Timer.h"
+#include "MathFun.h"
 
 class LedMatrixData : public Singltone<LedMatrixData> {
   public:
@@ -19,38 +20,53 @@ class LedMatrixData : public Singltone<LedMatrixData> {
   ~LedMatrixData() const;
 
   private:
-  const MAX_HUE_VALUE = 1023;
+  const FRAME_STEPS = 20;
+  const FRAME_DELAY = 50;
+  const Timer TIMER;
+  const MAX_HUE_VALUE = 1000;
+  const MAX_BRIGHT_VALUE = 1000;
   const uint8_t  MATRIX_DATA_PIN;
   const size_t ROW_SIZE;
 
   size_t _totalQuantity;
+  uint8_t* _valuesArray;
+  CRGB* _colorsArray;
   CRGB* _leds;
 
-  void setValueMat(const float dt, const LedMatrixData* data) const;
-  void setColorMat(const float dt, const LedMatrixData* data) const;
-  CRGB getRgb(const short colorVal) const;
+  void setValueMat(const float dt, const LedMatrixData* data);
+  void setColorMat(const float dt, const LedMatrixData* data);
+
+  void mirrorEvenRows(CRGB* _leds);
+  inline void setValuesArray(const uint8_t value){ for (int i = 0; i < NUM_LEDS; i++) _valuesArray[i] = value; }
+
+  void setValuesToCrgbs(CRGB* crgbs, const uint8_t* values);
+  void multiplyCrgbsByValues(CRGB* crgbs, const uint8_t* values);
 }
 
 inline Setup(const uint8_t  dataPin, const uint8_t  rowSize,
     const uint8_t  maxBrightness) : MATRIX_DATA_PIN(dataPin), ROW_SIZE(rowSize) {
   _totalQuantity = rowSize * rowSize;
   _leds = new CRGB[NUM_LEDS];
+  _valuesArray = new uint8_t[NUM_LEDS];
+  _colorsArray = new uint8_t[NUM_LEDS];
   FastLED.setBrightness(maxBrightness);
   FastLED.addLeds<NEOPIXEL, MATRIX_DATA_PIN>(_leds, _totalQuantity);
 }
 
 inline ~LedMatrixData() const{
-  delete[] _leds;
+  delete[] _leds, _valuesArray;
 }
 
 
-inline void writeMatrix(const float dt, const LedMatrixData* data){
+inline void writeMatrix(const LedMatrixData* data){
   setValueMat(dt, data);
   setColorMat(dt, data);
+  mirrorEvenRows();
   FastLED.show();
 }
 
-inline void setValueMat(const float dt, const LedMatrixData* data){
+inline void setValueMat(const LedMatrixData* data){
+
   switch(data->modType){
     case PerlinNoise : {
       break;
@@ -73,7 +89,7 @@ inline void setValueMat(const float dt, const LedMatrixData* data){
   }
 }
 
-inline void setColorMat(const float dt, const LedMatrixData* data){
+inline void setColorMat(const LedMatrixData* data){
   CRGB rgb = getRgb(data->colorValue);
   for (auto& extra : data->extraModTypes){
     switch(extra){
@@ -81,6 +97,7 @@ inline void setColorMat(const float dt, const LedMatrixData* data){
         break;
       }
       case Rainbow : {
+        millis() % 1023;
         break;
       }
       case Pulse : {
@@ -90,15 +107,29 @@ inline void setColorMat(const float dt, const LedMatrixData* data){
   }
 }
 
-inline CRGB getRgb(const short colorVal) const{
-  const CRGB rgb;
-  const float colorValP = colorVal / (MAX_HUE_VALUE / (3 * Math.PI / 2));
-  rgb.r = clamp((colorValP >= Math.PI / 2
-    ? std::sin(colorValP + Math.PI) * 255
-    : std::sin(colorValP + (Math.PI / 2)) * 255), 0 , 255);
-  rgb.g = clamp(std::sin(colorValP) * 255, 0 , 255);
-  rgb.b = clamp(std::sin(colorValP + 3 * Math.PI / 2) * 255, 0 , 255);
-  return rgb;
+inline void mirrorEvenRows(CRGB* _leds){
+  for (int i = 1; i < ROW_SIZE; i+=2){
+    for (int j = 0; j < ROW_SIZE; j++){
+      auto& ledA = _leds[i * ROW_SIZE + j];
+      auto& ledB = _leds[i * ROW_SIZE + j];
+      auto tmpValue = *ledA;
+      *ledA = *ledB;
+      *ledB = tmpValue;
+    }
+  }
+}
+
+inline void setValuesToCrgbs(CRGB* crgbs, const uint8_t* values) { 
+  for (int i = 0; i < NUM_LEDS; i++) crgbs[i].r = crgbs[i].g = crgbs[i].b = values[i]; 
+}
+
+inline void multiplyCrgbsByValues(CRGB* crgbs, const uint8_t* values) { 
+  for (int i = 0; i < NUM_LEDS; i++){
+    float propValue = values[i] / UINT8_MAX;
+    _leds[i].r *= propValue;
+    _leds[i].g *= propValue;
+    _leds[i].b *= propValue;
+  } 
 }
 
 #endif

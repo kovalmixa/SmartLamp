@@ -18,7 +18,6 @@ LedMatrix ledMatrix;
 MqttHandler mqttHandler;
 
 //main vars
-bool firstConnection = 1;
 short int colorVal = 0, lastColorVal = 0, lastLastColorVal = 0;
 short int lastBrightness = 512, lastLastBrightness = 512;
 short int mode = 0, lastMode = 0;
@@ -77,19 +76,13 @@ void setup() {
   // fillBySingleColor(0, 0, 255); //Blue indication before mqtt configuration
 }
 void loop() {
-  if (data.tryConnectToMqtt && mqttHandler.!client.connected()) {
-    reconnect();
-    return;
+  if (data.tryConnectToMqtt && mqttHandler.!client.connected())
+    mqttHandler.tryConnectToMqttServer(data.channel);
+  else{
+    bool isChangedData = inputHandler.tryGetInput(&data);
+    channelIndicator.tryWriteChannelNumber(data.channel);
+    ledMatrix.writeMatrix(&(data.ledMatrixData));
+    if (isChangedData) mqttHandler.trySendDataToServer(&data);
+    // client.loop();
   }
-
-  bool isChangedData = inputHandler.tryGetInput(&data);
-  channelIndicator.writeChannelNumber(data.channel);
-  ledMatrix.writeMatrix(dt, &(data.ledMatrixData));
-  if (isChangedData) mqttHandler.
-  lastState = state;
-  lastMode = mode;
-  lastLastColorVal = lastColorVal;
-  lastLastBrightness = lastBrightness;
-  server.handleClient();
-  client.loop();
 }

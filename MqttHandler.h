@@ -11,14 +11,15 @@
 #include <cstdlib>
 #include <ctime>
 
+#include "Timer.h"
 #include "Data.h"
 
 class MqttHandler : public Singltone<MqttHandler>{
   public:
-  bool tryConnectToMqttServer(const uint8_t channelId) const;
+  bool tryConnectToMqttServer(const uint8_t channelId);
   inline bool isConnectedToServer() const { return client.connected(); }
-  inline void setFunctionOnCallBack() const {  }
-  void sendDataToServer(LedMatrixData* data) const;
+  inline void setFunctionOnCallBack() {  }
+  void trySendDataToServer(Data* data);
   protected:
   static MqttHandler();
 
@@ -37,31 +38,37 @@ class MqttHandler : public Singltone<MqttHandler>{
   WiFiClient espClient = WiFiClient();
   PubSubClient client(espClient);
 
-  const uint ROTATION_ENCODER_SEND_DELAY = 500;
+  const Timer TIMER;
+  const uint ROTATION_ENCODER_SEND_DELAY = 100;
+  const uint TIME_TO_RECONNECT = 3000;
   const uint CHANNEL_CHANGE_DELAY = 500;
-  uint8_t _lastChannel;
+
+  uint8_t _lastChannelId;
+  uint8_t _channelToReconnect;
   short _lastBrightness, _lastColor;
 
-  void callback(char* topic, byte* payload, unsigned int length) const;
+  void tryReconnectChannel(const uint8_t channelId);
+  void callback(char* topic, byte* payload, unsigned int length) ;
 }
 
-inline bool tryConnectToMqttServer(const uint8_t channelId) const{
-  while (!client.connected()) {
-    Serial.print("Attempting MQTT connection...");
-    if (client.connect(clientId, mqtt_username, mqtt_password)) {
-      Serial.println("connected");
-      client.subscribe(mqtt_topic + std::to_string(channelId));
-    } 
-    else {
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      delay(5000);
-    }
+inline bool tryConnectToMqttServer(const uint8_t channelId) {
+  if (!TIMER.isTick(TIME_TO_RECONNECT)) return false;
+  _lastChannelId = channelId;
+  Serial.print("Attempting MQTT connection...");
+  if (client.connect(clientId, mqtt_username, mqtt_password)) {
+    Serial.println("connected");
+    client.subscribe(mqtt_topic + std::to_string(channelId));
+  } 
+  else Serial.println("failed, rc=" + std::to_string(client.state()) + ". Try again in " + std::to_string(TIME_TO_RECONNECT) + "milliseconds");
+  return isConnectedToServer();
+}
+
+inline void trySendDataToServer(Data* data) {
+  if (_lastChannelIdId != data->channel) {
+    tryReconnect(data);
+    return;
   }
-}
 
-inline void sendDataToServer(LedMatrixData* data) const{
   StaticJsonDocument<200> doc;
   DeserializationError error = deserializeJson(doc, json);
   
@@ -73,8 +80,14 @@ inline void sendDataToServer(LedMatrixData* data) const{
 }
 
 
-inline void reconnect(){
-
+inline void tryReconnectChannel(const uint8_t channelId){
+{
+  if (_channelToReconnect != channelId){
+    _channelToReconnect = channelId;
+    TIMER.setDefault();
+  }
+  else (TIMER.isTick(CHANNEL_CHANGE_DELAY)) 
+    tryConnectToMqttServer(channelId);
 }
 
 inline void callback(char* topic, byte* payload, unsigned int length){

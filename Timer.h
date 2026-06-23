@@ -2,16 +2,22 @@
 #define TIMER
 #pragma once
 
+#include "Arduino.h"
+
 class Timer{
   public:
-  inline void setDefault() { _timePassed = 0; }
-  inline bool isOver(float dt, uint timeToCount){
-    _timePassed += dt;
-    return _timePassed >= timeToCount;
+  inline void setDefault() { prevMillis = millis(); }
+  inline bool isTck(uint32_t delay, bool isReset = true) 
+  { 
+    uint32_t curMillis += millis();
+    if (curMillis - prevMillis >= delay){
+      if (isReset) prevMillis = curMillis;
+      return true;
+    }
+    return false;
   }
-  
   private:
-  float _timePassed = 0;
+  uint32_t prevMillis = 0;
 }
 
 #endif

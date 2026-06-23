@@ -3,10 +3,11 @@
 #pragma once
 
 #include "Arduino.h"
+#include "Timer.h"
 
 class ChannelIndicator : public Singltone<ChannelIndicator>{
   public:
-  void writeChannelNumber(const uint8_t number) const;
+  void tryWriteChannelNumber(const uint8_t number) const;
 
   protected:
   static ChannelIndicator();
@@ -16,32 +17,34 @@ class ChannelIndicator : public Singltone<ChannelIndicator>{
   #define LATCH_PIN 2
   #define DATA_PIN 13
 
-  const int INDICATOR_PINS[] = {2, 3, 4, 5, 6, 7, 8}; 
-  const int PINS_COUNT = sizeof(INDICATOR_PINS) / sizeof(INDICATOR_PINS[0]);
+  const Timer TIMER;
+  const bool IS_COMMON_CATHODE = true;
   const uint8_t segmentMap[] = {
-    0b00111111, // 0
-    0b00000110, // 1
-    0b01011011, // 2
-    0b01001111, // 3
-    0b01100110, // 4
-    0b01101101, // 5
-    0b01111101, // 6
-    0b00000111, // 7
-    0b01111111, // 8
-    0b01101111,  // 9
+    0b0111111, // 0
+    0b0000110, // 1
+    0b1011011, // 2
+    0b1001111, // 3
+    0b1100110, // 4
+    0b1101101, // 5
+    0b1111101, // 6
+    0b0000111, // 7
+    0b1111111, // 8
+    0b1101111,  // 9
+    0b1000000,  // -
   };
   void setDigit(uint8_t digit, bool isRight) const;
-  void clearDisplay() const;
+  inline void clearDisplay() const { updateShiftRegister(0); }
+  void updateShiftRegister(const uint8_t leds) const;
 }
 
-inline void writeChannelNumber(const uint8_t number) const{
+inline void tryWriteChannelNumber(const uint8_t number) const{
   clearDisplay();
   setDigit(number/10, false);
-  //добавить делеи на базе millis()
+  TIMER.isTick(5);
 
   clearDisplay();
   setDigit(number%10, true);
-  //добавить делеи на базе millis()
+  TIMER.isTick(5);
 }
 
 ChannelIndicator(){
@@ -50,13 +53,17 @@ ChannelIndicator(){
   pinMode(DATA_PIN, OUTPUT);
 }
 
-inline void setDigit(uint8_t digit, bool isRight){
-
+inline void setDigit(uint8_t digit, bool isRight) const{
+  uint8_t subValue = IS_COMMON_CATHODE ? 0 : UINT8_MAX;
+  uint8_t regBitMask = abs(segmentMap[digit > 9 ? 10 : digit] - subValue);
+  regBitMask |= isRight ? 0 : 1 << 7;
+  updateShiftRegister(regBitMask);
 }
 
-inline void clearDisplay(){
-  for (int i = 0; i < PINS_COUNT; i++)
-    digitalWrite(INDICATOR_PINS[i], !IS_COMMON_CATHODE);
+inline void updateShiftRegister(const uint8_t leds) const{
+  digitalWrite(LATCH_PIN, 0);
+  shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, leds);
+  digitalWrite(LATCH_PIN, 1);
 }
 
 #endif
