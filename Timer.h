@@ -9,15 +9,18 @@ class Timer{
   inline void setDefault() { prevMillis = millis(); }
   inline bool isTck(uint32_t delay, bool isReset = true) 
   { 
-    uint32_t curMillis += millis();
+    uint32_t curMillis = millis();
     if (curMillis - prevMillis >= delay){
-      if (isReset) prevMillis = curMillis;
+      if (isReset) prevMillis += delay;
+      if (curMillis - prevMillis > delay) {
+        prevMillis = curMillis; 
+      }
       return true;
     }
     return false;
   }
   private:
   uint32_t prevMillis = 0;
-}
+};
 
 #endif
