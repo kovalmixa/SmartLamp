@@ -7,7 +7,7 @@
 class Timer{
   public:
   inline void setDefault() { prevMillis = millis(); }
-  inline bool isTck(uint32_t delay, bool isReset = true) 
+  inline bool isTick(uint32_t delay, bool isReset = true) 
   { 
     uint32_t curMillis = millis();
     if (curMillis - prevMillis >= delay){
