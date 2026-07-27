@@ -5,8 +5,6 @@
 #include "Arduino.h"
 #include <FastLED.h>
 
-#region ValuesArray
-
 static void addSinusoid(uint8_t* valuesArray){
 
 }
@@ -27,10 +25,6 @@ static void addPerlinNoise(uint8_t* valuesArray){
 
 }
 
-#endregion
-
-#region Colors
-
 static CRGB getRgb(const short colorVal, const maxValue) {
   const CRGB rgb;
   const float colorValP = colorVal / (maxValue / (3 * Math.PI / 2));
@@ -41,7 +35,5 @@ static CRGB getRgb(const short colorVal, const maxValue) {
   rgb.b = clamp(std::sin(colorValP + 3 * Math.PI / 2) * UINT8_MAX, 0 , UINT8_MAX);
   return rgb;
 }
-
-#endregion
 
 #endif
