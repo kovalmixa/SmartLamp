@@ -1,5 +1,5 @@
-#ifndef DATA
-#define DATA
+#ifndef DATA_H
+#define DATA_H
 #pragma once
 
 #include <vector>
@@ -18,13 +18,13 @@ struct LedMatrixData{
   short colorValue = 0;
   ModType modType = ModType.None;
   std::vector<ExtraModType> extraModTypes;
-}
+};
 
 
 struct Data{
   bool tryConnectToMqtt = true;
   uint8_t channel;
   LedMatrixData ledMatrixData;
-}
+};
 
 #endif

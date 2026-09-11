@@ -1,5 +1,5 @@
-#ifndef LED_MATRIX
-#define LED_MATRIX
+#ifndef LED_MATRIX_H
+#define LED_MATRIX_H
 #pragma once
 
 #include "Arduino.h"
@@ -7,16 +7,19 @@
 #include <iostream>
 #include <cmath>
 
+#include "Singleton.h"
 #include "Data.h"
 #include "Timer.h"
 #include "MathFun.h"
 
-class LedMatrixData : public Singltone<LedMatrixData> {
+class LedMatrixData : public Singleton<LedMatrixData> {
+  friend class Singleton<LedMatrixData>;
   public:
   Setup(const uint8_t  rowSize, const uint8_t  maxBrightness);
   void writeMatrix(const float dt, const LedMatrixData* data) const;
 
   protected:
+  LedMatrixData() = default;
   ~LedMatrixData() const;
 
   private:
@@ -41,7 +44,7 @@ class LedMatrixData : public Singltone<LedMatrixData> {
 
   void setValuesToCrgbs(CRGB* crgbs, const uint8_t* values);
   void multiplyCrgbsByValues(CRGB* crgbs, const uint8_t* values);
-}
+};
 
 inline Setup(const uint8_t  dataPin, const uint8_t  rowSize,
     const uint8_t  maxBrightness) : MATRIX_DATA_PIN(dataPin), ROW_SIZE(rowSize) {

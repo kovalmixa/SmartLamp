@@ -1,11 +1,14 @@
-#ifndef TIMER
-#define TIMER
+#ifndef TIMER_H
+#define TIMER_H
 #pragma once
 
 #include "Arduino.h"
 
 class Timer{
   public:
+  Timer() = default;
+  ~Timer() = default;
+
   inline void setDefault() { prevMillis = millis(); }
   inline bool isTick(uint32_t delay, bool isReset = true) 
   { 

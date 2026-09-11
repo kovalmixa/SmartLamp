@@ -1,5 +1,5 @@
-#ifndef MQTT_HANDLER
-#define MQTT_HANDLER
+#ifndef MQTT_HANDLER_H
+#define MQTT_HANDLER_H
 #pragma once
 
 #include <Arduino.h>
@@ -11,17 +11,20 @@
 #include <cstdlib>
 #include <ctime>
 
+#include "Singleton.h"
 #include "Timer.h"
 #include "Data.h"
 
-class MqttHandler : public Singltone<MqttHandler>{
+class MqttHandler : public Singleton<MqttHandler> {
+  friend class Singleton<MqttHandler>;
   public:
   bool tryConnectToMqttServer(const uint8_t channelId);
   inline bool isConnectedToServer() const { return client.connected(); }
   inline void setFunctionOnCallBack() {  }
   void trySendDataToServer(Data* data);
+
   protected:
-  static MqttHandler();
+  MqttHandler();
 
   private:
   #define MQTT_LED_PIN 15
@@ -49,7 +52,7 @@ class MqttHandler : public Singltone<MqttHandler>{
 
   void tryReconnectChannel(const uint8_t channelId);
   void callback(char* topic, byte* payload, unsigned int length) ;
-}
+};
 
 inline bool tryConnectToMqttServer(const uint8_t channelId) {
   if (!TIMER.isTick(TIME_TO_RECONNECT)) return false;

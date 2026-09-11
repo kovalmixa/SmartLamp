@@ -1,11 +1,13 @@
-#ifndef INPUT_HANDLER
-#define INPUT_HANDLER
+#ifndef INPUT_HANDLER_H
+#define INPUT_HANDLER_H
 #pragma once
 
 #include <EncButton.h>
 #include <Arduino.h>
+#include "Singleton.h"
 
-class InputHandler : public Singltone<InputHandler>{
+class InputHandler : public Singleton<InputHandler>{
+  friend class Singleton<InputHandler>;
   public:
   bool tryGetInput(Data* data);
 
@@ -27,7 +29,7 @@ class InputHandler : public Singltone<InputHandler>{
     void readRotationEncoder(const uint8_t clkPin, const uint8_t dtPin, 
         const bool lastStateCLK, int* value);
     void processButtonInput(Data* data, bool* isChanged);
-}
+};
 
 inline bool tryGetInput(Data* data){
   auto* ledMatrixData = &(data->ledMatrixData); 

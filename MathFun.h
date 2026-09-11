@@ -1,9 +1,9 @@
-#ifndef MATH_FUN
-#define MATH_FUN
+#ifndef MATH_FUN_H
+#define MATH_FUN_H
 #pragma once
 
-#include "Arduino.h"
 #include <FastLED.h>
+#include "Arduino.h"
 
 static void addSinusoid(uint8_t* valuesArray){
 

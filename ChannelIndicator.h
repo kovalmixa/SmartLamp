@@ -1,16 +1,18 @@
-#ifndef LED_MATRIX
-#define LED_MATRIX
+#ifndef LED_MATRIX_H
+#define LED_MATRIX_H
 #pragma once
 
 #include "Arduino.h"
+#include "Singleton.h"
 #include "Timer.h"
 
-class ChannelIndicator : public Singltone<ChannelIndicator>{
+class ChannelIndicator : public Singleton<ChannelIndicator> {
+  friend class Singleton<ChannelIndicator>;
   public:
   void tryWriteChannelNumber(const uint8_t number) const;
 
   protected:
-  static ChannelIndicator();
+  ChannelIndicator();
 
   private:
   #define CLOCK_PIN 16
@@ -19,7 +21,7 @@ class ChannelIndicator : public Singltone<ChannelIndicator>{
 
   const Timer TIMER;
   const bool IS_COMMON_CATHODE = true;
-  const uint8_t segmentMap[] = {
+  const uint8_t segmentMap[11] = {
     0b0111111, // 0
     0b0000110, // 1
     0b1011011, // 2
@@ -35,7 +37,7 @@ class ChannelIndicator : public Singltone<ChannelIndicator>{
   void setDigit(uint8_t digit, bool isRight) const;
   inline void clearDisplay() const { updateShiftRegister(0); }
   void updateShiftRegister(const uint8_t leds) const;
-}
+};
 
 inline void tryWriteChannelNumber(const uint8_t number) const{
   clearDisplay();
