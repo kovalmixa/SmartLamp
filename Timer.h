@@ -5,7 +5,7 @@
 #include "Arduino.h"
 
 class Timer{
-  public:
+public:
   Timer() = default;
   ~Timer() = default;
 
@@ -22,7 +22,7 @@ class Timer{
     }
     return false;
   }
-  private:
+private:
   uint32_t prevMillis = 0;
 };
 

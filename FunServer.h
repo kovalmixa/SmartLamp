@@ -12,7 +12,7 @@
 #include <EncButton.h>
 
 class fun_server(){
-public:
+  public:
   void ButtonClick() {
     if (button.isClick()){
       if (!state) {

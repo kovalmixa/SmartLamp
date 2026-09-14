@@ -16,17 +16,17 @@
 #include "Data.h"
 
 class MqttHandler : public Singleton<MqttHandler> {
-  friend class Singleton<MqttHandler>;
-  public:
+friend class Singleton<MqttHandler>;
+public:
   bool tryConnectToMqttServer(const uint8_t channelId);
   inline bool isConnectedToServer() const { return client.connected(); }
   inline void setFunctionOnCallBack() {  }
   void trySendDataToServer(Data* data);
 
-  protected:
+protected:
   MqttHandler();
 
-  private:
+private:
   #define MQTT_LED_PIN 15
   #define MSG_BUFFER_SIZE (200)
   const char* _ssid = "smartLampDevice_";
@@ -54,7 +54,7 @@ class MqttHandler : public Singleton<MqttHandler> {
   void callback(char* topic, byte* payload, unsigned int length) ;
 };
 
-inline bool tryConnectToMqttServer(const uint8_t channelId) {
+inline bool MqttHandler::tryConnectToMqttServer(const uint8_t channelId) {
   if (!TIMER.isTick(TIME_TO_RECONNECT)) return false;
   _lastChannelId = channelId;
   Serial.print("Attempting MQTT connection...");
@@ -66,7 +66,7 @@ inline bool tryConnectToMqttServer(const uint8_t channelId) {
   return isConnectedToServer();
 }
 
-inline void trySendDataToServer(Data* data) {
+inline void MqttHandler::trySendDataToServer(Data* data) {
   if (_lastChannelIdId != data->channel) {
     tryReconnect(data);
     return;
@@ -83,7 +83,7 @@ inline void trySendDataToServer(Data* data) {
 }
 
 
-inline void tryReconnectChannel(const uint8_t channelId){
+inline void MqttHandler::tryReconnectChannel(const uint8_t channelId){
 {
   if (_channelToReconnect != channelId){
     _channelToReconnect = channelId;
@@ -93,7 +93,7 @@ inline void tryReconnectChannel(const uint8_t channelId){
     tryConnectToMqttServer(channelId);
 }
 
-inline void callback(char* topic, byte* payload, unsigned int length){
+inline void MqttHandler::callback(char* topic, byte* payload, unsigned int length){
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
@@ -102,7 +102,7 @@ inline void callback(char* topic, byte* payload, unsigned int length){
   Serial.println();
 }
 
-inline MqttHandler(){
+inline MqttHandler::MqttHandler(){
   pinMode(MQTT_LED_PIN, OUTPUT);
 
   std::srand(std::time(0));

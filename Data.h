@@ -6,17 +6,17 @@
 
 enum ModType{
   None, PerlinNoise, Circles, Sinusoid
-}
+};
 
 enum ExtraModType{
   Gradient, Pulse, Rainbow
-}
+};
 
 struct LedMatrixData{
   bool power = false;
   short brightness = 100;
   short colorValue = 0;
-  ModType modType = ModType.None;
+  ModType modType = ModType::None;
   std::vector<ExtraModType> extraModTypes;
 };
 

@@ -5,33 +5,36 @@
 #include <EncButton.h>
 #include <Arduino.h>
 #include "Singleton.h"
+#include "Data.h"
 
 class InputHandler : public Singleton<InputHandler>{
-  friend class Singleton<InputHandler>;
-  public:
+friend class Singleton<InputHandler>;
+public:
   bool tryGetInput(Data* data);
 
-  protected:
+protected:
   InputHandler();
 
-  private:
-    #define POT_PIN A0
-    #define BUT_PIN 0
-    #define BRT_CLK_PIN 5
-    #define BRT_DT_PIN 4
-    #define CLR_CLK_PIN 14
-    #define CLR_DT_PIN 12
-    const int MAX_ENCODER_VALUE = 1000;
+  const uint8_t BUT_PIN = 0;
+  const uint8_t POT_PIN = A0;
+  const uint8_t BRT_CLK_PIN = 5;
+  const uint8_t BRT_DT_PIN = 4;
+  const uint8_t CLR_CLK_PIN = 14;
+  const uint8_t CLR_DT_PIN = 12;
 
-    bool _lastbrightStateCLK, _lastColorStateCLK;
-    EncButton<EB_TICK, BUT_PIN> button;
+  const int MAX_ENCODER_VALUE = 1000;
 
-    void readRotationEncoder(const uint8_t clkPin, const uint8_t dtPin, 
-        const bool lastStateCLK, int* value);
-    void processButtonInput(Data* data, bool* isChanged);
+  bool _lastbrightStateCLK;
+  bool _lastColorStateCLK;
+
+  EncButton button{BUT_PIN};
+
+  void readRotationEncoder(const uint8_t clkPin, const uint8_t dtPin, 
+  const bool lastStateCLK, int* value);
+  void processButtonInput(Data* data, bool* isChanged);
 };
 
-inline bool tryGetInput(Data* data){
+inline bool InputHandler::tryGetInput(Data* data){
   auto* ledMatrixData = &(data->ledMatrixData); 
   bool isChanged = false;
 
@@ -57,7 +60,7 @@ inline bool tryGetInput(Data* data){
   processButtonInput(data, &isChanged);
   return isChanged;
 }
-inline void InputHandler(){
+inline void InputHandler::InputHandler(){
   pinMode(POT_PIN, INPUT_PULLUP);
   pinMode(BUT_PIN, INPUT_PULLUP);
 
@@ -72,7 +75,7 @@ inline void InputHandler(){
   _lastColorStateCLK = digitalRead(CLR_CLK_PIN);
 }
 
-inline void readRotationEncoder(const uint8_t clkPin, const uint8_t dtPin, 
+inline void InputHandler::readRotationEncoder(const uint8_t clkPin, const uint8_t dtPin, 
     const bool* lastStateCLK, int* value){
   bool currentStateCLK = digitalRead(clkPin);
   if (currentStateCLK != *lastStateCLK) {
@@ -82,7 +85,7 @@ inline void readRotationEncoder(const uint8_t clkPin, const uint8_t dtPin,
   *lastStateCLK = currentStateCLK;
 }
 
-inline void processButtonInput(Data* data, bool* isChanged){
+inline void InputHandler::processButtonInput(Data* data, bool* isChanged){
   button.tick();
   bool isHold = false;
   if (button.isClick()){
