@@ -10,6 +10,7 @@
 #include <WiFiManager.h>
 #include <cstdlib>
 #include <ctime>
+#include <functional>
 
 #include "Singleton.h"
 #include "Timer.h"
@@ -18,104 +19,108 @@
 class MqttHandler : public Singleton<MqttHandler> {
 friend class Singleton<MqttHandler>;
 public:
+  void setFunctionOnCallBack(std::function<void(LedMatrixData*)> cb);
   bool tryConnectToMqttServer(const uint8_t channelId);
-  inline bool isConnectedToServer() const { return client.connected(); }
-  inline void setFunctionOnCallBack() {  }
   void trySendDataToServer(Data* data);
+  inline bool isConnectedToServer() { return client.connected(); }
 
 protected:
   MqttHandler();
 
 private:
-  #define MQTT_LED_PIN 15
-  #define MSG_BUFFER_SIZE (200)
-  const char* _ssid = "smartLampDevice_";
-  const char* _password;
-  const char* _mqttTopic = "smartLamp_";
+  std::function<void(LedMatrixData*)> onDataReceived;
+
+  static const int MQTT_LED_PIN = 15;
+  static const int MSG_BUFFER_SIZE = 200;
+
+  String _ssid = "smartLampDevice_";
+  String _password;
+  String _mqttTopic = "smartLamp_";
+  const char* _mqttServer = "broker.hivemq.com";
   const int _mqttPort = 1883;
   int _currentRandIndex;
 
   char _msg[MSG_BUFFER_SIZE];
-  char* _message;
 
-  WiFiClient espClient = WiFiClient();
-  PubSubClient client(espClient);
+  WiFiClient espClient;
+  PubSubClient client{espClient};
 
-  const Timer TIMER;
-  const uint ROTATION_ENCODER_SEND_DELAY = 100;
-  const uint TIME_TO_RECONNECT = 3000;
-  const uint CHANNEL_CHANGE_DELAY = 500;
+  Timer TIMER;
+  const unsigned int ROTATION_ENCODER_SEND_DELAY = 100;
+  const unsigned int TIME_TO_RECONNECT = 3000;
+  const unsigned int CHANNEL_CHANGE_DELAY = 500;
 
   uint8_t _lastChannelId;
   uint8_t _channelToReconnect;
   short _lastBrightness, _lastColor;
 
   void tryReconnectChannel(const uint8_t channelId);
-  void callback(char* topic, byte* payload, unsigned int length) ;
+  static void callback(char* topic, byte* payload, unsigned int length);
 };
+
+inline void MqttHandler::setFunctionOnCallBack(std::function<void(LedMatrixData*)> cb) {
+    onDataReceived = cb;
+}
 
 inline bool MqttHandler::tryConnectToMqttServer(const uint8_t channelId) {
   if (!TIMER.isTick(TIME_TO_RECONNECT)) return false;
   _lastChannelId = channelId;
   Serial.print("Attempting MQTT connection...");
-  if (client.connect(clientId, mqtt_username, mqtt_password)) {
+  
+  if (client.connect(_ssid.c_str(), "", "")) {
     Serial.println("connected");
-    client.subscribe(mqtt_topic + std::to_string(channelId));
+    client.subscribe((_mqttTopic + String(channelId)).c_str());
   } 
-  else Serial.println("failed, rc=" + std::to_string(client.state()) + ". Try again in " + std::to_string(TIME_TO_RECONNECT) + "milliseconds");
+  else {
+    Serial.print("failed, rc=");
+    Serial.print(client.state());
+    Serial.println(". Try again...");
+  }
   return isConnectedToServer();
 }
 
 inline void MqttHandler::trySendDataToServer(Data* data) {
-  if (_lastChannelIdId != data->channel) {
-    tryReconnect(data);
+  if (_lastChannelId != data->channel) {
+    tryReconnectChannel(data->channel);
     return;
   }
-
-  StaticJsonDocument<200> doc;
-  DeserializationError error = deserializeJson(doc, json);
-  
-  if (error) return false;
-  this->id = doc["id"];
-  this->name = doc["name"].as<String>();
-  return true;
-  // client.publish(mqtt_topic, msg);
+  // client.publish(_mqttTopic.c_str(), _msg);
 }
 
-
-inline void MqttHandler::tryReconnectChannel(const uint8_t channelId){
-{
-  if (_channelToReconnect != channelId){
-    _channelToReconnect = channelId;
-    TIMER.setDefault();
-  }
-  else (TIMER.isTick(CHANNEL_CHANGE_DELAY)) 
-    tryConnectToMqttServer(channelId);
-}
-
-inline void MqttHandler::callback(char* topic, byte* payload, unsigned int length){
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++)
-    Serial.print((char)payload[i]);
-  Serial.println();
-}
-
-inline MqttHandler::MqttHandler(){
+inline MqttHandler::MqttHandler() {
   pinMode(MQTT_LED_PIN, OUTPUT);
 
-  std::srand(std::time(0));
+  std::srand(std::time(nullptr));
   _currentRandIndex = std::rand() % 10000 + 1;
-  _ssid += std::to_string(_currentRandIndex);
-  _password = std::to_string(std::rand());
+  _ssid += String(_currentRandIndex);
+  _password = String(std::rand());
 
   WiFiManager wm;
   wm.autoConnect("AutoConnectAP");
-  WiFi.softAP(_ssid, _password);
 
-  client.setServer(mqtt_server, mqtt_port);
+  client.setServer(_mqttServer, _mqttPort);
   client.setCallback(callback);
+}
+
+inline void MqttHandler::tryReconnectChannel(const uint8_t channelId) {
+  if (_channelToReconnect != channelId) {
+    _channelToReconnect = channelId;
+    TIMER.setDefault();
+  } else {
+    if (TIMER.isTick(CHANNEL_CHANGE_DELAY)) {
+      tryConnectToMqttServer(channelId);
+    }
+  }
+}
+
+inline void MqttHandler::callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (unsigned int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
 }
 
 #endif

@@ -24,13 +24,13 @@ protected:
 
   const int MAX_ENCODER_VALUE = 1000;
 
+  bool _lastButtonState;
   bool _lastbrightStateCLK;
   bool _lastColorStateCLK;
 
   EncButton button{BUT_PIN};
 
-  void readRotationEncoder(const uint8_t clkPin, const uint8_t dtPin, 
-  const bool lastStateCLK, int* value);
+  void readRotationEncoder(const uint8_t clkPin, const uint8_t dtPin, bool* lastStateCLK, int* value);
   void processButtonInput(Data* data, bool* isChanged);
 };
 
@@ -48,19 +48,20 @@ inline bool InputHandler::tryGetInput(Data* data){
   if (brightness > MAX_ENCODER_VALUE) brightness *= -1;
   if (color > MAX_ENCODER_VALUE) color = 0;
 
-  if (brightness != data->brightness){
+  if (brightness != ledMatrixData->brightness){
     ledMatrixData->brightness = (short)abs(brightness);
     isChanged = true;
   }
-  if (color != data->color){
-    ledMatrixData->color = (short)color;
+  if (color != ledMatrixData->colorValue){
+    ledMatrixData->colorValue = (short)color;
     isChanged = true;
   }
   
   processButtonInput(data, &isChanged);
   return isChanged;
 }
-inline void InputHandler::InputHandler(){
+
+inline InputHandler::InputHandler(){
   pinMode(POT_PIN, INPUT_PULLUP);
   pinMode(BUT_PIN, INPUT_PULLUP);
 
@@ -75,8 +76,7 @@ inline void InputHandler::InputHandler(){
   _lastColorStateCLK = digitalRead(CLR_CLK_PIN);
 }
 
-inline void InputHandler::readRotationEncoder(const uint8_t clkPin, const uint8_t dtPin, 
-    const bool* lastStateCLK, int* value){
+inline void InputHandler::readRotationEncoder(const uint8_t clkPin, const uint8_t dtPin, bool* lastStateCLK, int* value){
   bool currentStateCLK = digitalRead(clkPin);
   if (currentStateCLK != *lastStateCLK) {
     if (digitalRead(dtPin) != currentStateCLK) value--;

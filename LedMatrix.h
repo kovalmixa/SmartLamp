@@ -4,135 +4,142 @@
 
 #include "Arduino.h"
 #include <FastLED.h>
-#include <iostream>
-#include <cmath>
 
-#include "Singleton.h"
 #include "Data.h"
 #include "Timer.h"
 #include "MathFun.h"
 
-class LedMatrixData : public Singleton<LedMatrixData> {
-friend class Singleton<LedMatrixData>;
+template <uint8_t MATRIX_DATA_PIN>
+class LedMatrix {
 public:
-  Setup(const uint8_t  rowSize, const uint8_t  maxBrightness);
-  void writeMatrix(const float dt, const LedMatrixData* data) const;
+  LedMatrix(const size_t rowSize, const uint8_t maxBrightness);
+  ~LedMatrix();
 
-protected:
-  LedMatrixData() = default;
-  ~LedMatrixData() const;
-
+  void writeMatrix(const LedMatrixData* data);
+  
 private:
-  const FRAME_STEPS = 20;
-  const FRAME_DELAY = 50;
-  const Timer TIMER;
-  const MAX_HUE_VALUE = 1000;
-  const MAX_BRIGHT_VALUE = 1000;
-  const uint8_t  MATRIX_DATA_PIN;
+  static const int FRAME_STEPS = 20;
+  static const int FRAME_DELAY = 50;
+  static const int MAX_HUE_VALUE = 1000;
+  static const int MAX_BRIGHT_VALUE = 1000;
+
   const size_t ROW_SIZE;
 
   size_t _totalQuantity;
-  uint8_t* _valuesArray;
-  CRGB* _colorsArray;
-  CRGB* _leds;
+  uint8_t* _valuesArray = nullptr;
+  CRGB* _colorsArray = nullptr;
+  CRGB* _leds = nullptr;
+  Timer TIMER;
 
-  void setValueMat(const float dt, const LedMatrixData* data);
-  void setColorMat(const float dt, const LedMatrixData* data);
+  void setValueMat(const LedMatrixData* data);
+  void setColorMat(const LedMatrixData* data);
+  void mirrorEvenRows();
 
-  void mirrorEvenRows(CRGB* _leds);
-  inline void setValuesArray(const uint8_t value){ for (int i = 0; i < NUM_LEDS; i++) _valuesArray[i] = value; }
-
+  CRGB getRGBFromHue(const int colorVal);
   void setValuesToCrgbs(CRGB* crgbs, const uint8_t* values);
   void multiplyCrgbsByValues(CRGB* crgbs, const uint8_t* values);
+  void setValuesArray(const uint8_t value);
 };
 
-inline LedMatrixData::Setup(const uint8_t  dataPin, const uint8_t  rowSize,
-    const uint8_t  maxBrightness) : MATRIX_DATA_PIN(dataPin), ROW_SIZE(rowSize) {
+template <uint8_t MATRIX_DATA_PIN>
+inline LedMatrix<MATRIX_DATA_PIN>::LedMatrix(const size_t rowSize, const uint8_t maxBrightness) : ROW_SIZE(rowSize) {
   _totalQuantity = rowSize * rowSize;
-  _leds = new CRGB[NUM_LEDS];
-  _valuesArray = new uint8_t[NUM_LEDS];
-  _colorsArray = new uint8_t[NUM_LEDS];
+  _leds = new CRGB[_totalQuantity];
+  _valuesArray = new uint8_t[_totalQuantity];
+  _colorsArray = new CRGB[_totalQuantity];
   FastLED.setBrightness(maxBrightness);
   FastLED.addLeds<NEOPIXEL, MATRIX_DATA_PIN>(_leds, _totalQuantity);
 }
 
-inline LedMatrixData::~LedMatrixData() const{
-  delete[] _leds, _valuesArray;
+template <uint8_t MATRIX_DATA_PIN>
+inline LedMatrix<MATRIX_DATA_PIN>::~LedMatrix() {
+  delete[] _leds;
+  delete[] _valuesArray;
+  delete[] _colorsArray;
 }
 
-
-inline void LedMatrixData::writeMatrix(const LedMatrixData* data){
-  setValueMat(dt, data);
-  setColorMat(dt, data);
+template <uint8_t MATRIX_DATA_PIN>
+inline void LedMatrix<MATRIX_DATA_PIN>::writeMatrix(const LedMatrixData* data){
+  setValueMat(data);
+  setColorMat(data);
   mirrorEvenRows();
   FastLED.show();
 }
 
-inline void LedMatrixData::setValueMat(const LedMatrixData* data){
-
+template <uint8_t MATRIX_DATA_PIN>
+inline void LedMatrix<MATRIX_DATA_PIN>::setValueMat(const LedMatrixData* data){
   switch(data->modType){
-    case PerlinNoise : {
-      break;
-    }
-    case Circles : {
-      break;
-    }
-    case Sinusoid : {
-      break;
-    }
-    default: {
-      break;
-    }
+    case PerlinNoise : break;
+    case Circles : break;
+    case Sinusoid : break;
+    default: break;
   }
 
-  switch(data->extraModType){
-    case Pulse : {
-      break;
-    }
+  for (auto& extra : data->extraModTypes) {
+    if (extra == Pulse) {}
   }
 }
 
-inline void LedMatrixData::setColorMat(const LedMatrixData* data){
-  CRGB rgb = getRgb(data->colorValue);
+template <uint8_t MATRIX_DATA_PIN>
+inline void LedMatrix<MATRIX_DATA_PIN>::setColorMat(const LedMatrixData* data){
+  CRGB rgb = getRGBFromHue(data->colorValue);
   for (auto& extra : data->extraModTypes){
     switch(extra){
-      case Gradient : {
-        break;
-      }
-      case Rainbow : {
+      case Gradient : break;
+      case Rainbow : 
         millis() % 1023;
         break;
-      }
-      case Pulse : {
-        break;
-      }
+      case Pulse : break;
     }
   }
 }
 
-inline void LedMatrixData::mirrorEvenRows(CRGB* _leds){
-  for (int i = 1; i < ROW_SIZE; i+=2){
-    for (int j = 0; j < ROW_SIZE; j++){
-      auto& ledA = _leds[i * ROW_SIZE + j];
-      auto& ledB = _leds[i * ROW_SIZE + j];
-      auto tmpValue = *ledA;
-      *ledA = *ledB;
-      *ledB = tmpValue;
+template <uint8_t MATRIX_DATA_PIN>
+inline void LedMatrix<MATRIX_DATA_PIN>::mirrorEvenRows(){
+  for (size_t i = 1; i < ROW_SIZE; i += 2) {
+    for (size_t j = 0; j < ROW_SIZE / 2; j++) {
+      size_t leftIndex = i * ROW_SIZE + j;
+      size_t rightIndex = i * ROW_SIZE + (ROW_SIZE - 1 - j);
+      CRGB temp = _leds[leftIndex];
+      _leds[leftIndex] = _leds[rightIndex];
+      _leds[rightIndex] = temp;
     }
   }
 }
 
-inline void LedMatrixData::setValuesToCrgbs(CRGB* crgbs, const uint8_t* values) { 
-  for (int i = 0; i < NUM_LEDS; i++) crgbs[i].r = crgbs[i].g = crgbs[i].b = values[i]; 
+template <uint8_t MATRIX_DATA_PIN>
+inline CRGB LedMatrix<MATRIX_DATA_PIN>::getRGBFromHue(const int colorVal) {
+  CRGB rgb;
+  const float colorValP = (float)colorVal / (MAX_HUE_VALUE / (3.0f * M_PI / 2.0f));
+  rgb.r = std::clamp((float)(colorValP >= M_PI / 2.0f
+    ? sin(colorValP + M_PI) * 255.0f
+    : sin(colorValP + (M_PI / 2.0f)) * 255.0f), 0.0f, 255.0f);
+    
+  rgb.g = std::clamp((float)(sin(colorValP) * 255.0f), 0.0f, 255.0f);
+  
+  rgb.b = std::clamp((float)(sin(colorValP + 3.0f * M_PI / 2.0f) * 255.0f), 0.0f, 255.0f);
+  
+  return rgb;
 }
 
-inline void LedMatrixData::multiplyCrgbsByValues(CRGB* crgbs, const uint8_t* values) { 
-  for (int i = 0; i < NUM_LEDS; i++){
-    float propValue = values[i] / UINT8_MAX;
+template <uint8_t MATRIX_DATA_PIN>
+inline void LedMatrix<MATRIX_DATA_PIN>::setValuesToCrgbs(CRGB* crgbs, const uint8_t* values){ 
+  for (size_t i = 0; i < _totalQuantity; i++) crgbs[i].r = crgbs[i].g = crgbs[i].b = values[i]; 
+}
+
+template <uint8_t MATRIX_DATA_PIN>
+inline void LedMatrix<MATRIX_DATA_PIN>::multiplyCrgbsByValues(CRGB* crgbs, const uint8_t* values){ 
+  for (size_t i = 0; i < _totalQuantity; i++){
+    float propValue = (float)values[i] / 255.0f;
     _leds[i].r *= propValue;
     _leds[i].g *= propValue;
     _leds[i].b *= propValue;
   } 
+}
+
+template <uint8_t MATRIX_DATA_PIN>
+inline void LedMatrix<MATRIX_DATA_PIN>::setValuesArray(const uint8_t value){ 
+  if (_valuesArray) for (size_t i = 0; i < _totalQuantity; i++) _valuesArray[i] = value; 
 }
 
 #endif

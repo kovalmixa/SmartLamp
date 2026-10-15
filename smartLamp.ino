@@ -11,11 +11,19 @@
 #include "LedMatrix.h"
 #include "Data.h"
 
+//pins
+#define LED_MATRIX_PIN 3
+#define CLOCK_PIN 16
+#define LATCH_PIN 2
+#define DATA_PIN 13
+
+//objects
 Data data;
-InputHandler inputHandler;
-ChannelIndicator channelIndicator;
-LedMatrix ledMatrix;
-MqttHandler mqttHandler;
+ChannelIndicator channelIndicator(CLOCK_PIN, LATCH_PIN, DATA_PIN);
+LedMatrix<LED_MATRIX_PIN> ledMatrix(16, 30);
+
+InputHandler* inputHandler;
+MqttHandler* mqttHandler;
 
 //main vars
 short int colorVal = 0, lastColorVal = 0, lastLastColorVal = 0;
@@ -42,24 +50,19 @@ double bCounter = 1.1;
 
 //vars for mqtt messages
 
-void rewriteLampData(LedMatrixData newLampData){
+void rewriteLampData(LedMatrixData* newLampData){
 
 }
 
 void setup() {
   Serial.begin(115200);
 
-  inputHandler = InputHandler.getInstance();
-  inputHandler.tryGetInput(&data) ;
+  inputHandler = &(InputHandler::getInstance());
+  inputHandler->tryGetInput(&data);
 
-  channelIndicator = ChannelIndicator.getInstance();
-
-  ledMatrix = LedMatrix.getInstance();
-  ledMatrix.Setup(16, 50);
-
-  mqttHandler = MqttHandler.getInstance();
-  mqttHandler.setFunctionOnCallBack(rewriteLampData);
-  mqttHandler.tryConnectToMqttServer(&data);
+  mqttHandler = &(MqttHandler::getInstance());
+  mqttHandler->setFunctionOnCallBack(rewriteLampData);
+  mqttHandler->tryConnectToMqttServer(data.channel);
   // for (int i = 0; i < NUM_LEDS; i++){
   //     arr[i] = 0;
   // }
@@ -75,14 +78,15 @@ void setup() {
   // button.setButtonLevel(HIGH);
   // fillBySingleColor(0, 0, 255); //Blue indication before mqtt configuration
 }
+
 void loop() {
-  if (data.tryConnectToMqtt && mqttHandler.!client.connected())
-    mqttHandler.tryConnectToMqttServer(data.channel);
+  if (data.tryConnectToMqtt && !mqttHandler->isConnectedToServer())
+    mqttHandler->tryConnectToMqttServer(data.channel);
   else{
-    bool isChangedData = inputHandler.tryGetInput(&data);
+    bool isChangedData = inputHandler->tryGetInput(&data);
     channelIndicator.tryWriteChannelNumber(data.channel);
     ledMatrix.writeMatrix(&(data.ledMatrixData));
-    if (isChangedData) mqttHandler.trySendDataToServer(&data);
+    if (isChangedData) mqttHandler->trySendDataToServer(&data);
     // client.loop();
   }
 }
